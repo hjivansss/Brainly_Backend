@@ -23,6 +23,35 @@ const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); //This middleware is used to parse JSON bodies in requests
 app.use((0, cors_1.default)());
+// 7. Get Shared Brain Route/Endpoint of other users:
+app.get("/api/v1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const hash = req.params.sharelink; // Get the share link from the URL parameters
+    // Find the link in the database using the hash
+    const link = yield db_1.LinkModel.findOne({ hash: hash });
+    if (!link) {
+        res.status(404).json({ message: "Invalid share link" }); // Send error if not found.
+        return;
+    }
+    // Checking the hash -console.log(hash);
+    // Fetch content and user details for the shareable link from link table.
+    const content = yield db_1.ContentModel.find({ userId: link.userId });
+    const user = yield db_1.UserModel.findOne({ _id: link.userId });
+    if (!user) {
+        res.status(404).json({ message: "User not found" }); // Handle missing user case.
+        return;
+    }
+    const sanitizedContent = content.map(({ title, link, type }) => ({
+        title,
+        link,
+        type,
+    }));
+    //Checking the content sent - console.log(sanitizedContent)
+    res.json({
+        hash: hash,
+        username: user.username,
+        content: sanitizedContent
+    }); // Send user and content details in response.
+}));
 // 1. Signup Route/Endpoint:
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     //Todo: Add ZOD for input validation here and hash the password before storing it in the database. 
@@ -96,12 +125,20 @@ app.get("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(
     res.json({ content });
 }));
 // 5. Delete Content Route/Endpoint:
-app.delete("/api/v1/content", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const contentId = req.body.contentId;
-    yield db_1.ContentModel.deleteMany({
-        id: contentId,
+app.delete("/api/v1/content/:id", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const contentId = req.params.id;
+    const result = yield db_1.ContentModel.deleteOne({
+        _id: contentId,
         userId: req.userId //Making sure that the content belongs to the user who is trying to delete it
     });
+    console.log(contentId);
+    if (result.deletedCount === 0) {
+        return;
+        res.status(403).json({
+            message: "Not your content"
+        });
+    }
+    res.status(200).json({ message: "Deleted" });
 }));
 // 6. Share Your Brain Route/Endpoint:
 app.post("/api/v1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -128,29 +165,32 @@ app.post("/api/v1/brain/share", middleware_1.userMiddleware, (req, res) => __awa
         });
     }
 }));
-// 7. Get Shared Brain Route/Endpoint of other users:
-app.get("/api/v1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const hash = req.params.sharelink; // Get the share link from the URL parameters
-    // Find the link in the database using the hash
-    const link = yield db_1.LinkModel.findOne({ hash: hash });
-    if (!link) {
-        res.status(411).json({ message: "Sorry Incorrect Input" });
-        return;
-    }
-    //Find the content of the user who shared their brain
-    const content = yield db_1.ContentModel.find({ userId: link.userId });
-    //Find the user who shared their brain 
-    const user = yield db_1.UserModel.findOne({ _id: link.userId });
-    if (!user) {
-        res.status(411).json({
-            message: "User not found,error should ideally not happen"
-        });
-        return;
-    }
-    // Return the content and user details
-    res.json({
-        username: user === null || user === void 0 ? void 0 : user.username, // Optional chaining to avoid errors if user is not found
-        content: content
-    });
-}));
+{
+    /* // 7. Get Shared Brain Route/Endpoint of other users:
+    app.get("/api/v1/brain/:sharelink",async (req,res)=>{
+        const hash = req.params.sharelink; // Get the share link from the URL parameters
+        // Find the link in the database using the hash
+        const link = await LinkModel.findOne({ hash });
+        if (!link) {
+            res.status(404).json({ message: "Invalid share link" }); // Send error if not found.
+            return;
+        }
+
+        // Fetch content and user details for the shareable link.
+        const content = await ContentModel.find({ userId: link.userId });
+        const user = await UserModel.findOne({ _id: link.userId });
+
+        if (!user) {
+            res.status(404).json({ message: "User not found" }); // Handle missing user case.
+            return;
+        }
+
+        res.json({
+            username: user.username,
+            content
+        }); // Send user and content details in response.
+    
+    })
+   */
+}
 app.listen(4000);

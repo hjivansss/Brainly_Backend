@@ -14,6 +14,44 @@ const app = express();
 app.use(express.json());//This middleware is used to parse JSON bodies in requests
 app.use(cors());
 
+
+
+// 7. Get Shared Brain Route/Endpoint of other users:
+app.get("/api/v1/brain/:sharelink",async (req,res)=>{
+    const hash = req.params.sharelink; // Get the share link from the URL parameters
+    // Find the link in the database using the hash
+    const link = await LinkModel.findOne({ hash:hash });
+    if (!link) {
+        res.status(404).json({ message: "Invalid share link" }); // Send error if not found.
+        return;
+    }
+    // Checking the hash -console.log(hash);
+    // Fetch content and user details for the shareable link from link table.
+    const content = await ContentModel.find({ userId: link.userId });
+    const user = await UserModel.findOne({ _id: link.userId });
+
+    if (!user) {
+        res.status(404).json({ message: "User not found" }); // Handle missing user case.
+        return;
+    }
+    const sanitizedContent = content.map(({title,link,type})=>({
+        
+        title,
+        link,
+        type,
+        
+        
+    })) ;
+     
+    //Checking the content sent - console.log(sanitizedContent)
+    res.json({
+        hash:hash,
+        username: user.username,
+        content:sanitizedContent
+    }); // Send user and content details in response.
+   
+})
+
 // 1. Signup Route/Endpoint:
 app.post("/api/v1/signup",async (req,res)=>{
     //Todo: Add ZOD for input validation here and hash the password before storing it in the database. 
@@ -94,12 +132,21 @@ app.get("/api/v1/content",userMiddleware,async (req,res)=>{
 })
 
 // 5. Delete Content Route/Endpoint:
-app.delete("/api/v1/content",async (req,res)=>{
-    const contentId = req.body.contentId;
-    await ContentModel.deleteMany({
-        id:contentId,
+app.delete("/api/v1/content/:id",userMiddleware,async (req,res)=>{
+    const contentId = req.params.id;
+
+    const result = await ContentModel.deleteOne({
+        _id:contentId,
         userId:req.userId //Making sure that the content belongs to the user who is trying to delete it
     })
+    console.log(contentId);
+    if(result.deletedCount===0){
+        return 
+        res.status(403).json({
+            message:"Not your content"
+        })
+    }
+    res.status(200).json({message:"Deleted"})
 })
 
 // 6. Share Your Brain Route/Endpoint:
@@ -129,36 +176,34 @@ app.post("/api/v1/brain/share",userMiddleware,async (req,res)=>{
 
 })
 
-// 7. Get Shared Brain Route/Endpoint of other users:
-app.get("/api/v1/brain/:sharelink",async (req,res)=>{
-    const hash = req.params.sharelink; // Get the share link from the URL parameters
-    // Find the link in the database using the hash
-    const link = await LinkModel.findOne({hash:hash});
+           {
+            /* // 7. Get Shared Brain Route/Endpoint of other users:
+            app.get("/api/v1/brain/:sharelink",async (req,res)=>{
+                const hash = req.params.sharelink; // Get the share link from the URL parameters
+                // Find the link in the database using the hash
+                const link = await LinkModel.findOne({ hash });
+                if (!link) {
+                    res.status(404).json({ message: "Invalid share link" }); // Send error if not found.
+                    return;
+                }
 
-    if(!link){
-        res.status(411).json({message:"Sorry Incorrect Input"})
-        return
-    }
+                // Fetch content and user details for the shareable link.
+                const content = await ContentModel.find({ userId: link.userId });
+                const user = await UserModel.findOne({ _id: link.userId });
 
-    //Find the content of the user who shared their brain
-    const content = await ContentModel.find({userId:link.userId})
+                if (!user) {
+                    res.status(404).json({ message: "User not found" }); // Handle missing user case.
+                    return;
+                }
 
-    //Find the user who shared their brain 
-    const user = await UserModel.findOne({_id:link.userId});
-
-    if(!user){
-        res.status(411).json({
-            message:"User not found,error should ideally not happen"
-        })
-        return;
-    }
-
-    // Return the content and user details
-    res.json({
-        username:user?.username,// Optional chaining to avoid errors if user is not found
-        content:content
-    })
-})
+                res.json({
+                    username: user.username,
+                    content
+                }); // Send user and content details in response.
+            
+            })
+           */
+          }
 
 
 app.listen(4000);

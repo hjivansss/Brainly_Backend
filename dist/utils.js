@@ -13,3 +13,4 @@ function random(len) {
     }
     return answer; // Return the generated random string
 }
+//Pinecone/Mongodb init

@@ -6,7 +6,10 @@ import {JWT_PASSWORD} from "./config"; // Import the JWT secret from config
 export const userMiddleware = async (req: Request,res : Response,next: NextFunction)=> {
     // Get the token from the Authorization header
     const header =req.headers["authorization"];//Extract the "authorzation" header from the request headers
-
+    if(!header){
+        return
+        res.status(401).json({message:"JWT must be provided"});
+    }
      // Verify the JWT token using the JWT_PASSWORD secret key.
      const decoded =jwt.verify(header as string,JWT_PASSWORD);
 

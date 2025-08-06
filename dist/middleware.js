@@ -19,6 +19,10 @@ const config_1 = require("./config"); // Import the JWT secret from config
 const userMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     // Get the token from the Authorization header
     const header = req.headers["authorization"]; //Extract the "authorzation" header from the request headers
+    if (!header) {
+        return;
+        res.status(401).json({ message: "JWT must be provided" });
+    }
     // Verify the JWT token using the JWT_PASSWORD secret key.
     const decoded = jsonwebtoken_1.default.verify(header, config_1.JWT_PASSWORD);
     if (decoded) {

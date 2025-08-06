@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 export function random (len:number){
     let options="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";//A string from where we will take strings to genrate a random string 
     let length=options.length; //Get the length of the options string
@@ -10,3 +11,8 @@ export function random (len:number){
     }
     return answer; // Return the generated random string
 }
+
+
+
+//Pinecone/Mongodb init
+
