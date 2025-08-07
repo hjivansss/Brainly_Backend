@@ -12,14 +12,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config(); // Load environment variables from .env
+const JWT_PASSWORD = process.env.JWT_PASSWORD;
 const express_1 = __importDefault(require("express"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
-const config_1 = require("./config"); // Import the JWT secret from config
 const middleware_1 = require("./middleware"); // Import the user middleware for authentication
-//const bcrypt = require("bcryptjs"); // Import bcrypt for password hashing
 const utils_1 = require("./utils"); // Import the random function from utils
 const cors_1 = __importDefault(require("cors"));
+// Import Zod for input validation(checking if the input has the correct format)
+//const bcrypt = require("bcryptjs"); // Import bcrypt for password hashing
+const zod_1 = require("zod");
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json()); //This middleware is used to parse JSON bodies in requests
 app.use((0, cors_1.default)());
@@ -52,50 +57,75 @@ app.get("/api/v1/brain/:sharelink", (req, res) => __awaiter(void 0, void 0, void
         content: sanitizedContent
     }); // Send user and content details in response.
 }));
+//Zod validation schema
+const signupSchema = zod_1.z.object({
+    username: zod_1.z.string().min(3, "Username must be at least 3 characters long"),
+    password: zod_1.z.string().min(6, "Password must be at least 6 characters long"),
+});
 // 1. Signup Route/Endpoint:
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    //Todo: Add ZOD for input validation here and hash the password before storing it in the database. 
-    const username = req.body.username;
-    const password = req.body.password;
-    try {
-        yield db_1.UserModel.create({
-            username: username,
-            password: password
-        });
-        res.json({
-            message: "User signed up successfully"
-        });
-    }
-    catch (error) {
-        //Handle error for duplicate usernames
-        res.status(409).json({
-            message: "Error signingup : Duplicate username",
-        });
-    }
-}));
-// 2. Signin Route/Endpoint:
-app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
-    //check if the user exists or not
-    const existingUser = yield db_1.UserModel.findOne({
-        username: username,
-        password: password
-    });
-    if (existingUser) {
-        //Generate jwt token
-        const token = jsonwebtoken_1.default.sign({
-            id: existingUser.id
-        }, config_1.JWT_PASSWORD);
-        //Return the token to the user
-        res.json({
-            token
+    // 1. Validate input with Zod
+    const parseResult = signupSchema.safeParse(req.body);
+    if (!parseResult.success) {
+        res.status(400).json({
+            message: "Invalid input",
+            errors: parseResult.error.errors.map(e => e.message),
         });
     }
     else {
-        res.status(403).json({
-            message: "Invalid username or password"
+        const { username, password } = parseResult.data;
+        // 2. Hash the password before saving
+        const hashedPassword = yield bcryptjs_1.default.hash(password, 10);
+        try {
+            // 3. Save the user to the database
+            yield db_1.UserModel.create({
+                username: username,
+                password: hashedPassword,
+            });
+            res.json({
+                message: "User signed up successfully",
+            });
+        }
+        catch (error) {
+            // 4. Handle duplicate username error
+            res.status(409).json({
+                message: "Error signing up: Duplicate username",
+            });
+        }
+    }
+}));
+//
+const signinSchema = zod_1.z.object({
+    username: zod_1.z.string().min(3),
+    password: zod_1.z.string().min(6),
+});
+// 2. Signin Route/Endpoint:
+app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    // 1. Validate input using Zod
+    const parseResult = signinSchema.safeParse(req.body);
+    if (!parseResult.success) {
+        res.status(400).json({
+            message: "Invalid input",
+            errors: parseResult.error.errors.map((e) => e.message),
         });
+    }
+    else {
+        const { username, password } = parseResult.data;
+        // 2. Find user
+        const existingUser = yield db_1.UserModel.findOne({ username });
+        if (!existingUser) {
+            res.status(403).json({ message: "Invalid username or password" });
+        }
+        else {
+            // 3. Compare passwords
+            const isPasswordValid = yield bcryptjs_1.default.compare(password, existingUser.password);
+            if (!isPasswordValid) {
+                res.status(403).json({ message: "Invalid username or password" });
+            }
+            // 4. Generate JWT token
+            const token = jsonwebtoken_1.default.sign({ id: existingUser._id }, JWT_PASSWORD);
+            res.json({ token });
+        }
     }
 }));
 // 3. Add Content Route/Endpoint:Here we use middleware to check if the user is singined in and has sent a valid token

@@ -1,7 +1,11 @@
-import { JWT_PASSWORD } from "./config";
-//Schemas 
+import dotenv from "dotenv";
+dotenv.config(); // Load environment variables from .env
+const MONGO_URL = process.env.MONGO_URL as string;
+
 import mongoose,{model,Schema} from "mongoose";
-mongoose.connect("mongodb+srv://hjivansingha1234:4px3fp531tHLsUQK@cluster0.svhzdut.mongodb.net/Brainly");
+mongoose.connect(MONGO_URL)
+  .then(() => console.log("✅ Connected to MongoDB"))
+  .catch(err => console.error("❌ MongoDB connection failed:", err));
 
 // Defining the schema for the user
 const userSchema = new Schema({

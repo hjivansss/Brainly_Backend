@@ -32,11 +32,18 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LinkModel = exports.ContentModel = exports.UserModel = void 0;
-//Schemas 
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config(); // Load environment variables from .env
+const MONGO_URL = process.env.MONGO_URL;
 const mongoose_1 = __importStar(require("mongoose"));
-mongoose_1.default.connect("mongodb+srv://hjivansingha1234:4px3fp531tHLsUQK@cluster0.svhzdut.mongodb.net/Brainly");
+mongoose_1.default.connect(MONGO_URL)
+    .then(() => console.log("✅ Connected to MongoDB"))
+    .catch(err => console.error("❌ MongoDB connection failed:", err));
 // Defining the schema for the user
 const userSchema = new mongoose_1.Schema({
     username: { type: String, unique: true, required: true },
