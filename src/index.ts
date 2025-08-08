@@ -3,7 +3,6 @@ dotenv.config(); // Load environment variables from .env
 const JWT_PASSWORD = process.env.JWT_PASSWORD as string;
 
 import express from "express";
-import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { UserModel,ContentModel, LinkModel} from "./db";
 import { userMiddleware } from "./middleware"; // Import the user middleware for authentication
@@ -13,7 +12,7 @@ import cors from "cors";
 
 // Import Zod for input validation(checking if the input has the correct format)
 //const bcrypt = require("bcryptjs"); // Import bcrypt for password hashing
-import { unknown, z } from "zod";
+import {  z } from "zod";
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 
