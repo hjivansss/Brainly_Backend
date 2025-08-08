@@ -1,6 +1,9 @@
+import dotenv from "dotenv";
+dotenv.config(); // Load environment variables from .env
+const JWT_PASSWORD = process.env.JWT_PASSWORD as string;
+
 import { NextFunction,Request,Response } from "express";    
 import jwt from "jsonwebtoken";
-import {JWT_PASSWORD} from "./config"; // Import the JWT secret from config
 
 // Middleware to authenticate user based on JWT token
 export const userMiddleware = async (req: Request,res : Response,next: NextFunction)=> {

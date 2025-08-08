@@ -13,8 +13,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.userMiddleware = void 0;
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config(); // Load environment variables from .env
+const JWT_PASSWORD = process.env.JWT_PASSWORD;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const config_1 = require("./config"); // Import the JWT secret from config
 // Middleware to authenticate user based on JWT token
 const userMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     // Get the token from the Authorization header
@@ -24,7 +26,7 @@ const userMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, fun
         res.status(401).json({ message: "JWT must be provided" });
     }
     // Verify the JWT token using the JWT_PASSWORD secret key.
-    const decoded = jsonwebtoken_1.default.verify(header, config_1.JWT_PASSWORD);
+    const decoded = jsonwebtoken_1.default.verify(header, JWT_PASSWORD);
     if (decoded) {
         //@ts-ignore            //Todo:override the type of the global request object 
         req.userId = decoded.id; // If the token is valid, set the userId in the request object4

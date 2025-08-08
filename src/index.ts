@@ -13,7 +13,7 @@ import cors from "cors";
 
 // Import Zod for input validation(checking if the input has the correct format)
 //const bcrypt = require("bcryptjs"); // Import bcrypt for password hashing
-import { z } from "zod";
+import { unknown, z } from "zod";
 import bcrypt from "bcryptjs";
 import { Request, Response } from "express";
 
@@ -75,7 +75,7 @@ app.post("/api/v1/signup",async (req: Request,res:Response)=>{
   if (!parseResult.success) {
       res.status(400).json({
       message: "Invalid input",
-      errors: parseResult.error.errors.map(e => e.message),
+      //errors: parseResult.error.errors.map(e => e.message),
     });
   }else{
         const { username, password } = parseResult.data;
@@ -115,7 +115,7 @@ app.post("/api/v1/signin",async (req:Request,res:Response)=>{
   if (!parseResult.success) {
       res.status(400).json({
       message: "Invalid input",
-      errors: parseResult.error.errors.map((e) => e.message),
+      //errors: parseResult.error.errors.map((e) => e.message),
     });
   }else{
         const { username, password } = parseResult.data;
@@ -179,8 +179,7 @@ app.delete("/api/v1/content/:id",userMiddleware,async (req,res)=>{
     })
     console.log(contentId);
     if(result.deletedCount===0){
-        return 
-        res.status(403).json({
+         res.status(403).json({
             message:"Not your content"
         })
     }
