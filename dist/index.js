@@ -69,7 +69,7 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
     if (!parseResult.success) {
         res.status(400).json({
             message: "Invalid input",
-            errors: parseResult.error.errors.map(e => e.message),
+            //errors: parseResult.error.errors.map(e => e.message),
         });
     }
     else {
@@ -106,7 +106,7 @@ app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, funct
     if (!parseResult.success) {
         res.status(400).json({
             message: "Invalid input",
-            errors: parseResult.error.errors.map((e) => e.message),
+            //errors: parseResult.error.errors.map((e) => e.message),
         });
     }
     else {
@@ -163,7 +163,6 @@ app.delete("/api/v1/content/:id", middleware_1.userMiddleware, (req, res) => __a
     });
     console.log(contentId);
     if (result.deletedCount === 0) {
-        return;
         res.status(403).json({
             message: "Not your content"
         });
